@@ -1,0 +1,44 @@
+[package]
+name = "libp2p-rustconnect"
+version = "0.1.0"
+edition = "2024"
+authors = ["Erhan Tezcan"]
+publish = false
+
+[features]
+default = ["ffi"]
+ffi = []
+
+[lib]
+crate-type = [
+  "cdylib", # allows C/C++ to use this library
+  "rlib",   # allows Rust to use this library
+]
+
+[dependencies]
+libp2p = { version = "0.55.0", features = [
+  "tokio",
+  "gossipsub",
+  "mdns",
+  "noise",
+  "macros",
+  "tcp",
+  "yamux",
+  "quic",
+] }
+
+# logging
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+debug_print = "1.0.0"
+tracing = "0.1.41"
+
+# runtime & async
+tokio = { version = "1.44.2", features = ["full"] }
+tokio-util = "0.7.15"
+futures = "0.3.31"
+
+# env
+dotenvy = "0.15.7"
+thiserror = "2.0.12"
+eyre = "0.6.12"
+rustyline = { version = "15.0.0", default-features = false }
