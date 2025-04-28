@@ -1,13 +1,18 @@
 use crate::{ChatBehaviour, ChatBehaviourEvent};
 use futures::StreamExt;
 use libp2p::swarm::SwarmEvent;
-use libp2p::{PeerId, TransportError, gossipsub, mdns, swarm};
+use libp2p::{PeerId, TransportError, gossipsub, identify, mdns, swarm};
 use libp2p::{noise, tcp, yamux};
 use std::collections::VecDeque;
 use std::io;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
+/// The main client struct that handles the chat functionality.
+///
+/// - Shall be started with [`Self::run`] and will listen for incoming messages.
+/// - All received messages will be stored in the [`Self::received`] queue.
+/// - Can be stopped gracefully with [`Self::cancel`].
 pub struct ChatClient {
     /// The underlying [`swarm`] instance
     swarm: swarm::Swarm<ChatBehaviour>,
@@ -15,7 +20,7 @@ pub struct ChatClient {
     cancellation: CancellationToken,
     /// Message queue to store the messages received.
     pub received: VecDeque<(PeerId, String)>,
-    /// Channel to send messages to the client.
+    /// Channel to send messages to this client.
     sender_channel: mpsc::UnboundedReceiver<String>,
 }
 
@@ -52,7 +57,6 @@ impl ChatClient {
                 noise::Config::new,
                 yamux::Config::default,
             )?
-            .with_quic()
             .with_behaviour(|key| Ok(ChatBehaviour::new(key.clone()).unwrap()))
             .unwrap()
             .build();
@@ -63,6 +67,7 @@ impl ChatClient {
                 swarm,
                 cancellation,
                 received: Default::default(),
+                // the "receiver" of this channel will be the channel used by "sender"
                 sender_channel: receiver,
             },
             sender,
@@ -96,46 +101,26 @@ impl ChatClient {
                     if message.is_empty() {
                         continue;
                     }
+
                     // publish the message
                     if let Err(e) = self.publish(message) {
-                        tracing::error!("Error while publishing: {e}");
+                        log::error!("Error while publishing: {e}");
                     }
                 }
 
                 // handle events
                 event = self.swarm.select_next_some() => match event {
-                    SwarmEvent::Behaviour(ChatBehaviourEvent::Mdns(mdns::Event::Discovered(list))) => {
-                        for (peer_id, _multiaddr) in list {
-                            tracing::info!("mDNS discovered a new peer: {peer_id}");
-                            // add explicitly to ALWAYS send to this peer
-                            self.swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
-                        }
-                    },
-                    SwarmEvent::Behaviour(ChatBehaviourEvent::Mdns(mdns::Event::Expired(list))) => {
-                        for (peer_id, _multiaddr) in list {
-                            tracing::info!("mDNS discover peer has expired: {peer_id}");
-                            self.swarm.behaviour_mut().gossipsub.remove_explicit_peer(&peer_id);
-                        }
-                    },
-                    SwarmEvent::Behaviour(ChatBehaviourEvent::Gossipsub(gossipsub::Event::Message {
-                        propagation_source: peer_id,
-                        message,
-                        ..
-                    })) => {
-                        let message_str = String::from_utf8_lossy(&message.data);
-                        tracing::info!("{peer_id}: {message_str}");
-
-                        // store the message in history
-                        self.received.push_back((peer_id, message_str.to_string()));
-                    },
+                    SwarmEvent::Behaviour(ChatBehaviourEvent::Mdns(event)) => self.handle_mdns(event),
+                    SwarmEvent::Behaviour(ChatBehaviourEvent::Identify(event)) => self.handle_identify(event),
+                    SwarmEvent::Behaviour(ChatBehaviourEvent::Gossipsub(event)) => self.handle_gossipsub(event),
                     SwarmEvent::NewListenAddr { address, .. } => {
-                        tracing::info!("Local node is listening on {address}");
+                        log::info!("Local node is listening on {address}");
                     },
                     SwarmEvent::ConnectionClosed { peer_id, .. } => {
-                        tracing::info!("Connected closed with {peer_id}");
+                        log::info!("Connected closed with {peer_id}");
                     },
                     _ => {
-                        tracing::trace!("Unhandled event: {event:?}");
+                        log::trace!("Unhandled event: {event:?}");
                     }
                 }
             }
@@ -144,6 +129,81 @@ impl ChatClient {
         self.stop();
 
         Ok(())
+    }
+
+    #[inline]
+    fn handle_mdns(&mut self, event: mdns::Event) {
+        match event {
+            mdns::Event::Discovered(peers) => {
+                use libp2p::swarm::DialError;
+
+                for (peer_id, _multiaddr) in peers {
+                    log::info!("mDNS discovered a new peer: {peer_id}");
+                    // we dont add it yet, we instead wait for the identify event
+                    match self.swarm.dial(peer_id) {
+                        Ok(_) => { /* do nothing */ }
+                        Err(err) => match err {
+                            DialError::DialPeerConditionFalse(_) => { /* do nothing */ }
+                            err => {
+                                log::error!("Could not dial peer {peer_id}: {err}");
+                            }
+                        },
+                    }
+                }
+            }
+            mdns::Event::Expired(peers) => {
+                for (peer_id, _multiaddr) in peers {
+                    log::info!("mDNS discover peer has expired: {peer_id}");
+                    if let Err(_) = self.swarm.disconnect_peer_id(peer_id) {
+                        log::error!("Could not disconnect peer {peer_id}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[inline]
+    fn handle_identify(&mut self, event: identify::Event) {
+        match event {
+            identify::Event::Received { peer_id, info, .. } => {
+                log::info!("Identified peer {peer_id}!");
+                if info.protocol_version != ChatBehaviour::PROTOCOL_VERSION {
+                    log::warn!(
+                        "Peer {peer_id} is using a different protocol version: {}, disconnecting.",
+                        info.protocol_version
+                    );
+                    let _ = self.swarm.disconnect_peer_id(peer_id);
+                } else {
+                    self.swarm
+                        .behaviour_mut()
+                        .gossipsub
+                        .add_explicit_peer(&peer_id);
+                }
+            }
+            _ => {
+                log::trace!("Unhandled identify event: {event:?}");
+            }
+        }
+    }
+
+    #[inline]
+    fn handle_gossipsub(&mut self, event: gossipsub::Event) {
+        match event {
+            gossipsub::Event::Message {
+                message_id,
+                message,
+                propagation_source: peer_id,
+            } => {
+                let message_str = String::from_utf8_lossy(&message.data);
+                log::info!("Gossipsub message received: {message_id:?}");
+
+                // store the message in history
+                self.received.push_back((peer_id, message_str.to_string()));
+            }
+            _ => {
+                log::trace!("Unhandled gossipsub event: {event:?}");
+            }
+        }
     }
 
     /// Triggers the cancellation token, which will stop the client and all other tasks
@@ -167,13 +227,6 @@ impl ChatClient {
             .map_err(ChatClientError::SubscribtionError)?;
 
         // listen on all interfaces and whatever port the OS assigns
-        self.swarm
-            .listen_on(
-                format!("/ip4/0.0.0.0/udp/{port}/quic-v1")
-                    .parse()
-                    .expect("should parse"),
-            )
-            .map_err(ChatClientError::ListenError)?;
         self.swarm
             .listen_on(
                 format!("/ip4/0.0.0.0/tcp/{port}")

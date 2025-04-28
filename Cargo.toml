@@ -21,16 +21,16 @@ libp2p = { version = "0.55.0", features = [
   "gossipsub",
   "mdns",
   "noise",
+  "identify",
   "macros",
   "tcp",
   "yamux",
-  "quic",
 ] }
 
 # logging
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 debug_print = "1.0.0"
-tracing = "0.1.41"
+log = "0.4.27"
+env_logger = "0.11.8"
 
 # runtime & async
 tokio = { version = "1.44.2", features = ["full"] }

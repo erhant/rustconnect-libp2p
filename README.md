@@ -2,41 +2,20 @@
 
 A demonstration of using [libp2p](https://github.com/libp2p/rust-libp2p) in Rust with C FFI bindings, showcasing peer-to-peer communication capabilities in a cross-language environment, for [Rust Connect #1 in Istanbul, Turkey 04/05/2025](https://lu.ma/7eznvozi).
 
-- **Peer-to-Peer Chat**: Built on libp2p, enabling direct communication between peers
-- **FFI Support**: Complete C bindings for the Rust libp2p implementation
-- **Cross-Platform**: Works on Unix-based systems
-- **Simple API**: Straightforward C interface for integration
+## Usage
 
-## Installation
-
-### Prerequisites
-
-- Rust (latest stable)
-- C compiler (gcc/clang) optionally for the FFI example
-
-### Building
-
-Clone the repository:
+You will need Rust to use this project. First, Clone the repository:
 
 ```sh
 git clone https://github.com/yourusername/rustconnect-libp2p
 cd rustconnect-libp2p
 ```
 
-Build the Rust library:
+Then, build the library:
 
 ```sh
 cargo build --release
 ```
-
-Afterwards, you can optionally build the C example binary:
-
-```sh
-cd ffi
-make
-```
-
-## Usage
 
 You can run with:
 
@@ -44,20 +23,40 @@ You can run with:
 cargo run
 ```
 
-> [!TIP]
->
-> You can run without cloning at all too:
->
-> ```sh
-> cargo install https://github.com/yourusername/rustconnect-libp2p
-> rustconnect-libp2p
-> ```
+You can type a text to the terminal, and when you press <kbd>ENTER</kbd> it will be published to the network.
+To exit the application, you must write `exit` and enter.
 
-You can run the C example (after building) with:
+### FFI
+
+You need a C compiler (gcc/clang) for the FFI example. After building the Rust library, go to `ffi` directory and build the C binary:
 
 ```sh
 cd ffi
+make
+
+# or `make again` if you have changes & want to force re-build
+```
+
+Now you can run the binary with:
+
+```sh
 ./build/main
+```
+
+This will listen to messages on the network, publishing messages is left as an exercise!
+
+To terminate the application, do <kbd>CTRL+C</kbd>.
+
+> [!NOTE]
+>
+> The FFI functions are exported via `external` feature, which is enabled by default.
+
+## Documentation
+
+You can view the crate documentation with:
+
+```sh
+cargo doc --open --no-deps --document-private-items
 ```
 
 ## License

@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct libp2p_chat_handle libp2p_chat_handle_t;
 typedef struct libp2p_chat libp2p_chat_t;
+typedef struct libp2p_chat_handle libp2p_chat_handle_t;
 
 /**
  * @brief Create a new libp2p instance

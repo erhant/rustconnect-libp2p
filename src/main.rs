@@ -1,20 +1,16 @@
 use libp2p_rustconnect::ChatClient;
 use std::env;
 use tokio_util::sync::CancellationToken;
-use tracing::level_filters::LevelFilter;
-use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     let _ = dotenvy::dotenv(); // load .env file if it exists
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::OFF.into())
-                .from_env()?
-                .add_directive("libp2p_rustconnect=info".parse()?),
-        )
-        .try_init();
+    env_logger::builder()
+        .filter(None, log::LevelFilter::Off)
+        .filter_module("libp2p_rustconnect", log::LevelFilter::Info)
+        .filter_module("libp2p", log::LevelFilter::Error)
+        .parse_default_env() // reads RUST_LOG variable
+        .init();
 
     // read port from env, defaults to 0
     const DEFAULT_PORT: u16 = 0;
@@ -41,7 +37,7 @@ async fn main() -> eyre::Result<()> {
                     break;
                 }
                 if sender.send(line).is_err() {
-                    tracing::error!("Error while sending message to the client");
+                    log::error!("Error while sending message to the client");
                     break;
                 }
             }
@@ -53,7 +49,7 @@ async fn main() -> eyre::Result<()> {
 
     // wait for the reader task to finish, since client is finished too at this point
     if let Err(e) = reader_handle.await {
-        tracing::error!("Error while waiting for reader: {}", e);
+        log::error!("Error while waiting for reader: {}", e);
     }
 
     Ok(())

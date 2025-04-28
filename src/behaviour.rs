@@ -1,4 +1,4 @@
-use libp2p::{gossipsub, identity::Keypair, mdns, swarm::NetworkBehaviour};
+use libp2p::{gossipsub, identify, identity::Keypair, mdns, swarm::NetworkBehaviour};
 use std::time::Duration;
 
 /// This macro will create a `ChatBehaviourEvent` type that swarm will emit in a stream.
@@ -6,6 +6,7 @@ use std::time::Duration;
 pub struct ChatBehaviour {
     pub(crate) gossipsub: gossipsub::Behaviour,
     pub(crate) mdns: mdns::tokio::Behaviour,
+    pub(crate) identify: identify::Behaviour,
 }
 
 /// A generic error type for the chat behaviour.
@@ -20,8 +21,17 @@ pub enum ChatBehaviourError {
 }
 
 impl ChatBehaviour {
+    /// identify protocol string, looks like `chat/{major}.{minor}`
+    pub const PROTOCOL_VERSION: &str = concat!(
+        "chat/",
+        env!("CARGO_PKG_VERSION_MAJOR"),
+        ".",
+        env!("CARGO_PKG_VERSION_MINOR")
+    );
+
     pub fn new(key: Keypair) -> Result<Self, ChatBehaviourError> {
         Ok(ChatBehaviour {
+            identify: identify_behaviour(&key),
             mdns: mdns_behaviour(&key)?,
             gossipsub: gossipsub_behaviour(key)?,
         })
@@ -60,4 +70,14 @@ fn mdns_behaviour(keypair: &Keypair) -> Result<mdns::tokio::Behaviour, ChatBehav
 
     Behaviour::new(Config::default(), keypair.public().to_peer_id())
         .map_err(ChatBehaviourError::MDNS)
+}
+
+#[inline(always)]
+fn identify_behaviour(keypair: &Keypair) -> identify::Behaviour {
+    use identify::{Behaviour, Config};
+
+    Behaviour::new(
+        Config::new(ChatBehaviour::PROTOCOL_VERSION.into(), keypair.public())
+            .with_push_listen_addr_updates(true),
+    )
 }
