@@ -76,8 +76,6 @@ fn mdns_behaviour(keypair: &Keypair) -> Result<mdns::tokio::Behaviour, ChatBehav
 fn identify_behaviour(keypair: &Keypair) -> identify::Behaviour {
     use identify::{Behaviour, Config};
 
-    Behaviour::new(
-        Config::new(ChatBehaviour::PROTOCOL_VERSION.into(), keypair.public())
-            .with_push_listen_addr_updates(true),
-    )
+    let config = Config::new(ChatBehaviour::PROTOCOL_VERSION.into(), keypair.public());
+    Behaviour::new(config)
 }

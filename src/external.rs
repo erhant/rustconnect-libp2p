@@ -10,11 +10,29 @@
 //!
 //! Each function in this module is prefixed with `libp2p_chat_` to avoid name clashes.
 //! They also have their declarations within their docstrings.
-use debug_print::debug_eprintln;
 use std::thread::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 use crate::ChatClient;
+
+/// Enables logging for the library.
+///
+/// To be declared in C/C++ as:
+/// ```c
+/// extern void libp2p_chat_enable_logs(void);
+/// ```
+#[unsafe(no_mangle)]
+pub extern "C" fn libp2p_chat_enable_logs() {
+    if let Err(err) = env_logger::builder()
+        .filter(None, log::LevelFilter::Off)
+        .filter_module("libp2p_rustconnect", log::LevelFilter::Info)
+        .filter_module("libp2p", log::LevelFilter::Error)
+        .parse_default_env() // reads RUST_LOG variable
+        .try_init()
+    {
+        eprintln!("Could not enable logs: {err}");
+    }
+}
 
 /// Creates a new chat client.
 ///
@@ -58,8 +76,8 @@ pub extern "C" fn libp2p_chat_stop(
     client.cancel();
     match handle.join() {
         Ok(_) => 0,
-        Err(e) => {
-            debug_eprintln!("Error while stopping the client: {:?}", e);
+        Err(err) => {
+            log::error!("Could not stopp the client: {err:?}");
             -1
         }
     }
@@ -107,7 +125,6 @@ pub extern "C" fn libp2p_chat_start(client_ptr: *mut ChatClient, port: u16) -> *
         .expect("could not create runtime");
 
     let handle = std::thread::spawn(move || {
-        debug_eprintln!("Starting the node!");
         rt.block_on(async { client.run(port).await.expect("could not run the client") });
     });
 
@@ -137,8 +154,8 @@ pub fn libp2p_chat_publish(
 
     match client.publish(data) {
         Ok(_) => 0,
-        Err(e) => {
-            debug_eprintln!("Error while publishing: {:?}", e);
+        Err(err) => {
+            log::error!("Could not publish message: {err:?}");
             -1
         }
     }

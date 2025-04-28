@@ -174,6 +174,7 @@ impl ChatClient {
                     );
                     let _ = self.swarm.disconnect_peer_id(peer_id);
                 } else {
+                    log::debug!("Adding peer {peer_id} to gossipsub explicit peers");
                     self.swarm
                         .behaviour_mut()
                         .gossipsub
@@ -218,6 +219,7 @@ impl ChatClient {
     /// Can be inlined as its only called once.
     #[inline]
     fn start(&mut self, port: u16) -> Result<(), ChatClientError> {
+        log::info!("Starting client on port {port}");
         // subscribe
         let topic = gossipsub::IdentTopic::new(Self::CHAT_TOPIC);
         self.swarm
@@ -249,5 +251,7 @@ impl ChatClient {
 
         // close channel
         self.sender_channel.close();
+
+        log::info!("Client stopped");
     }
 }

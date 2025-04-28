@@ -9,6 +9,11 @@ typedef struct libp2p_chat libp2p_chat_t;
 typedef struct libp2p_chat_handle libp2p_chat_handle_t;
 
 /**
+ * @brief Enables logging for libp2p chat client.
+ */
+extern void libp2p_chat_enable_logs(void);
+
+/**
  * @brief Create a new libp2p instance
  * @return libp2p_chat_t* pointer to the libp2p instance
  */

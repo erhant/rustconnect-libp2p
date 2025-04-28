@@ -18,6 +18,9 @@ static inline void signal_handler(int signal) {
 int main(void) {
   signal(SIGINT, &signal_handler);
 
+  // enables logging, respects `RUST_LOG` environment variable
+  libp2p_chat_enable_logs();
+
   // create a new libp2p instance
   libp2p_chat_t *libp2p_chat = libp2p_chat_new();
   if (!libp2p_chat) {

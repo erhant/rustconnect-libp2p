@@ -41,11 +41,13 @@ Now you can run the binary with:
 
 ```sh
 ./build/main
+
+# can enable logs as well:
+RUST_LOG=info ./build/main
 ```
 
-This will listen to messages on the network, publishing messages is left as an exercise!
-
-To terminate the application, do <kbd>CTRL+C</kbd>.
+This will listen to messages on the network; to terminate the application simply do <kbd>CTRL+C</kbd>.
+How to publish messages is left as an exercise!
 
 > [!NOTE]
 >
