@@ -54,7 +54,7 @@ impl ChatClient {
             .with_tokio()
             .with_tcp(
                 tcp::Config::default(),
-                noise::Config::new,
+                noise::Config::new, // uses existing keypair for Noise protocol
                 yamux::Config::default,
             )?
             .with_behaviour(|key| Ok(ChatBehaviour::new(key.clone()).unwrap()))

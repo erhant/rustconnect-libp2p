@@ -24,14 +24,18 @@ async fn main() -> eyre::Result<()> {
 
     // spawn a task to read line and send messages
     let reader_handle = tokio::spawn(async move {
-        let mut rl = rustyline::DefaultEditor::new().expect("could not create rustyline editor");
-        println!("Type 'exit' to quit.");
+        // if we get this as input, exit gracefully
+        const EXIT_MSG: &str = "exit";
+
+        let mut rl = rustyline::DefaultEditor::new().unwrap();
+        println!("Type a message and press ENTER to publish it to the network.");
+        println!("Type 'exit' to close the client.");
         while !cancellation.is_cancelled() {
             if let Ok(line) = rl.readline("") {
                 if line.is_empty() {
                     continue;
                 }
-                if line.eq("exit") {
+                if line.eq(EXIT_MSG) {
                     // this will cancel the client too
                     cancellation.cancel();
                     break;

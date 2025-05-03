@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -I. -I$(SRC_DIR)
 
-# we load the shared library from the target/release (or target/debug) directory
+# load the shared library from the target/release (or target/debug) directory
 # of the Rust project, which is where Cargo places the compiled library
 LDFLAGS = -L ../target/debug -llibp2p_rustconnect
 # LDFLAGS = -L ../target/release -llibp2p_rustconnect

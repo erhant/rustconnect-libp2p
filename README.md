@@ -4,7 +4,7 @@ A demonstration of using [libp2p](https://github.com/libp2p/rust-libp2p) in Rust
 
 ## Usage
 
-You will need Rust to use this project. First, Clone the repository:
+You will need Rust to use this project. Clone the repository to get started:
 
 ```sh
 git clone https://github.com/yourusername/rustconnect-libp2p
@@ -28,7 +28,7 @@ To exit the application, you must write `exit` and enter.
 
 ### FFI
 
-You need a C compiler (gcc/clang) for the FFI example. After building the Rust library, go to `ffi` directory and build the C binary:
+You need a C compiler (`gcc` / `clang`) for the FFI example. After building the Rust library, go to `ffi` directory and build the C binary:
 
 ```sh
 cd ffi
