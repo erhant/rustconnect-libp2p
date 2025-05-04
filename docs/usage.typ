@@ -81,6 +81,21 @@ LibP2P handles everything behind the scenes, and all providers communicate with 
   ```
 ]
 
+== Cancellation
+
+Using a cancellation token is a good way to handle graceful shutdowns:
+
+#text(size: 0.9em)[
+  ```rust
+  loop {
+    _ = cancellation.cancelled() => break,
+    event = self.swarm.select_next_some() => {
+      // ...
+    }
+  }
+  ```
+]
+
 
 // talk about gossipsub message auth and flamegraph
 // talk about multi-threading
