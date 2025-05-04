@@ -1,5 +1,8 @@
 use libp2p::{gossipsub, identify, identity::Keypair, mdns, swarm::NetworkBehaviour};
-use std::time::Duration;
+use std::{
+    hash::{DefaultHasher, Hash, Hasher},
+    time::Duration,
+};
 
 /// This macro will create a `ChatBehaviourEvent` type that swarm will emit in a stream.
 #[derive(NetworkBehaviour)]
@@ -40,17 +43,14 @@ impl ChatBehaviour {
 
 #[inline(always)]
 fn gossipsub_behaviour(keypair: Keypair) -> Result<gossipsub::Behaviour, ChatBehaviourError> {
+    use gossipsub::MessageAuthenticity;
     use gossipsub::{Behaviour, ConfigBuilder, ValidationMode};
-    use gossipsub::{Message, MessageAuthenticity, MessageId};
 
-    // if two messages have the same id they wont be published again
-    // so we simply use timestamp nanos as the message id
-    let message_id_fn = |_: &Message| {
-        let nanos = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        MessageId::from(nanos.to_ne_bytes())
+    // make sure this is somehow unique per message, otherwise it will be gossip'ed infinitely
+    let message_id_fn = |message: &gossipsub::Message| {
+        let mut s = DefaultHasher::new();
+        message.data.hash(&mut s);
+        gossipsub::MessageId::from(s.finish().to_string())
     };
 
     let gossipsub_config = ConfigBuilder::default()

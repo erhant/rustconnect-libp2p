@@ -78,10 +78,20 @@ impl ChatClient {
     pub fn publish(&mut self, message: impl Into<Vec<u8>>) -> Result<(), ChatClientError> {
         let topic = gossipsub::IdentTopic::new(Self::CHAT_TOPIC);
 
+        // append timestamp to message
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+
+        let mut data = Vec::new();
+        data.extend_from_slice(&nanos.to_ne_bytes());
+        data.extend_from_slice(&message.into());
+
         self.swarm
             .behaviour_mut()
             .gossipsub
-            .publish(topic, message)
+            .publish(topic, data)
             .map_err(ChatClientError::PublishError)?;
 
         Ok(())
@@ -195,7 +205,10 @@ impl ChatClient {
                 message,
                 propagation_source: peer_id,
             } => {
-                let message_str = String::from_utf8_lossy(&message.data);
+                // extract nanoseconds from the message
+                let _ =
+                    u64::from_ne_bytes(message.data[0..8].try_into().expect("should be 8 bytes"));
+                let message_str = String::from_utf8_lossy(&message.data[8..]);
                 log::debug!("Gossipsub message received: {message_id:?}");
                 log::info!("Message from {peer_id}:\n{message_str}");
 
