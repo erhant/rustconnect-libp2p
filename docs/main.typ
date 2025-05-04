@@ -21,7 +21,7 @@
 )
 
 #title-slide()
-#outline()
+// #outline()
 
 #include "introduction.typ"
 #include "identity.typ"

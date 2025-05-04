@@ -75,7 +75,7 @@ impl ChatClient {
     }
 
     /// Publish a message to the chat topic.
-    pub fn publish(&mut self, message: impl Into<Vec<u8>>) -> Result<(), ChatClientError> {
+    pub fn publish(&mut self, message: impl AsRef<[u8]>) -> Result<(), ChatClientError> {
         let topic = gossipsub::IdentTopic::new(Self::CHAT_TOPIC);
 
         // append timestamp to message
@@ -86,7 +86,7 @@ impl ChatClient {
 
         let mut data = Vec::new();
         data.extend_from_slice(&nanos.to_ne_bytes());
-        data.extend_from_slice(&message.into());
+        data.extend_from_slice(message.as_ref());
 
         self.swarm
             .behaviour_mut()
