@@ -1,6 +1,20 @@
 
 = Introduction
 
+== whoami
+
+- Building a peer-to-peer network (in Rust) at *Dria*#footnote([formerly known as *FirstBatch*]).
+
+- Interested in EVM & Solidity, and all kinds of languages!
+
+- Loves open-source, contributed to a few zero-knowledge cryptography & LLM libraries.
+
+- Worked on GPU programming (CUDA) at Koç University.
+
+- Using Rust for \~2 years, can't go back to *anything else*.
+
+- See more at *erhant.me*#footnote([note to self: rebuild with `ratzilla`]) or `github.com/erhant`.
+
 == What is libp2p?
 
 libp2p#footnote("https://github.com/libp2p/rust-libp2p") is a modular peer-to-peer networking stack, driven by well-designed specifications with several implementations (Go, JavaScript, *Rust*, C).
@@ -10,22 +24,25 @@ Rust implementation of libp2p in particular is being used in notable projects li
 
 == Protocol Stack
 
-=== Transport Layer
+#columns(2)[
+  === Connection
+  - TCP, QUIC, WebSocket
+  - Multiplexing (*Yamux*, *mplex*)
+  - Security (*Noise*)
 
-- TCP, QUIC, WebSocket
-- Multiplexing (Yamux, mplex)
-- Security (Noise)
+  === Discovery
+  - Kademlia DHT
+  - Multicast DNS (mDNS)
+  - Rendezvous
 
-=== Peer Discovery
+  #colbreak()
 
-- Kademlia DHT
-- mDNS
-- Rendezvous
+  === Communication
 
-=== Peer Communication
+  - GossipSub
+  - Request-Response
+  - DCutR
+]
 
-- GossipSub
-- Request-Response
-- DCutR
 
 

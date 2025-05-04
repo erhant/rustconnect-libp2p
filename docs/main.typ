@@ -4,12 +4,12 @@
 #show: university-theme.with(
   aspect-ratio: "16-9",
   config-info(
-    title: "libp2p & Rust",
+    title: "libp2p",
     subtitle: "Modular Peer-to-Peer Networking Stack for Rust",
     short-title: "github.com/erhant/rustconnect-libp2p",
     author: "Erhan Tezcan",
     date: "4.5.2025",
-    institution: "Dria",
+    institution: "Blockchain Dev. @ Dria",
   ),
   config-colors(
     primary: rgb("#B7410E"), // rust orange
@@ -25,7 +25,11 @@
 
 #include "introduction.typ"
 #include "identity.typ"
-#include "connection.typ"
 #include "discovery.typ"
 #include "communication.typ"
 #include "usage.typ"
+#include "caveats.typ"
+#include "ffi.typ"
+
+= Demo?
+= Thank You!

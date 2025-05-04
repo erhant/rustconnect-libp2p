@@ -1,6 +1,5 @@
 .PHONTY: watch compile open
 
-# watches the source file for changes and compiles it
 watch:
 	typst watch main.typ
 

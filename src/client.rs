@@ -196,7 +196,8 @@ impl ChatClient {
                 propagation_source: peer_id,
             } => {
                 let message_str = String::from_utf8_lossy(&message.data);
-                log::info!("Gossipsub message received: {message_id:?}");
+                log::debug!("Gossipsub message received: {message_id:?}");
+                log::info!("Message from {peer_id}:\n{message_str}");
 
                 // store the message in history
                 self.received.push_back((peer_id, message_str.to_string()));

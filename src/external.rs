@@ -108,7 +108,7 @@ pub extern "C" fn libp2p_chat_free(chat_ptr: *mut ChatClient) {
 ///
 /// To be declared in C/C++ as:
 /// ```c
-/// extern libp2p_chat_handle_t* libp2p_chat_start(libp2p_chat_t* ptr, const char* addr);
+/// extern libp2p_chat_handle_t* libp2p_chat_start(libp2p_chat_t* ptr, unsigned short port);
 /// ```
 ///
 /// The returned handle should be passed to [`libp2p_chat_stop()`] to stop the daemon gracefully.
